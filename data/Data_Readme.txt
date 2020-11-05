@@ -24,6 +24,7 @@ stationDetails.json
 		TMIN - Average minimum temperature for the month (10ths of degress C)
 		PRCP - Average Precipiation (tenths of mm)
 		SNOW - Average Snowfall for the month (mm)
+		O100 - Number of days over 100F (37.78 C)
 		
 	Note that if there is no data for these fields they will not exist
 	

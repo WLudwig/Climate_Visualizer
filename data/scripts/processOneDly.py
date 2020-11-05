@@ -14,9 +14,7 @@ def main(argv):
     # initialize return file
     dlyFile = open(argv[1], "r")
 
-    # res[1990].append("hi")
-
-    
+   
 
     for curLine in dlyFile:
         year = curLine[11:15]
@@ -33,6 +31,7 @@ def main(argv):
         itemLen = 5
         sum = 0.0
         num = 0.0
+        numOver100f = 0.0 #number of days over 100f (37.778 c)
 
         for i in range(31):
             curIdx = firstIdx + i*8
@@ -40,8 +39,12 @@ def main(argv):
             if(curVal!=-9999):
                 sum+=curVal
                 num+=1.0
+            if(elType=="TMAX" and curVal >=377.78): #over 100 f
+                numOver100f+=1
         if(num!=0):
             res[int(year)][int(month)][elType]=(sum/num)
+            if(elType=="TMAX"):
+                res[int(year)][int(month)]["O100"]=numOver100f
 
     
     path =argv[2]
