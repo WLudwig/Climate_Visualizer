@@ -1,4 +1,4 @@
-#mapDiv{
+#mapDiv {
     height: 400px;
     width: 700px;
 }
@@ -8,4 +8,20 @@ body {
     height: 100%;
     margin: 0;
     padding: 0;
+    font-family: 'Lato', sans-serif;
+}
+
+div.tooltip {
+    /* position: absolute; */
+    text-align: center;
+    width: 180;
+    height: 90px;
+    padding: 8px;
+    font-size: 12px;
+    background: lightsteelblue;
+    border: 0px;
+    border-radius: 8px;
+    pointer-events: none;
+    vertical-align: center;
+    float: right;
 }

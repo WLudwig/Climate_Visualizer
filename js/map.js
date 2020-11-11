@@ -39,9 +39,15 @@ function start() {
             //Create a new google map object
             let map = new google.maps.Map(mapContainer, options);
 
+            d3.select("#mapDiv")
+                .append("div")
+                .attr("class", "tooltip")
+                .style("opacity", 0);
+
             //add markers
             for (i in data) {
 
+                let tooltip = d3.select(".tooltip");
 
                 let curMarker = new google.maps.Marker({
                     position: new google.maps.LatLng(data[i].lat, data[i].lon),
@@ -52,9 +58,32 @@ function start() {
                     state: data[i].state,
                     stationId: data[i].id,
                     elev: data[i].elev,
+                    lat: data[i].lat,
+                    lon: data[i].lon,
                     selected: false
                 })
 
+                curMarker.addListener("mouseover", function(e) {
+
+                    console.log(this);
+                    tooltip.html("<strong>" + this.title + " - " + this.state + "</strong><br/><p>Lat: " + this.lat + "<br/> Lon:" + this.lon + "<br/>Elev: " + this.elev + "m<br/>Station: " + this.stationId + "  </p>")
+
+                    tooltip
+                        .transition()
+                        .duration(200)
+                        .style("opacity", 0.9);
+
+
+                });
+
+                curMarker.addListener("mouseout", function(e) {
+                    // console.log("EVT: ", this);
+                    tooltip
+                        .transition()
+                        .duration(500)
+                        .style("opacity", 0);
+
+                })
 
 
                 curMarker.addListener("click", function(e) {
@@ -74,6 +103,8 @@ function start() {
                         this.setZIndex(2000);
                     }
                 })
+
+
 
             }
 
