@@ -1,4 +1,7 @@
 selectedIDs = []
+loaded = []
+data = []
+stationData = []
 
 function start() {
 
@@ -14,13 +17,10 @@ function start() {
     fetch("data/stationDetails.json")
         .then(response => response.json()).then(data => {
 
-            // The first parameter of this function is the element that you want to render the map to.
-            // We here use the native DOM API.
-            // if using d3 instead of the native DOM API, the call should be: d3.select("#map").node().
-            // notice the use of node() to access the actual DOM node instead of the d3 selection.
+            stationData = data;
+
             let mapContainer = document.getElementById('mapDiv');
-            console.log("inside initMap");
-            //The second parameter we want to use is the zoom and center(lat and lng) options for the map
+
             let options = {
                 center: { lat: 40, lng: -96 }, // Show the whole USA
                 zoom: 4,
@@ -65,7 +65,6 @@ function start() {
 
                 curMarker.addListener("mouseover", function(e) {
 
-                    console.log(this);
                     tooltip.html("<strong>" + this.title + " - " + this.state + "</strong><br/><p>Lat: " + this.lat + "<br/> Lon:" + this.lon + "<br/>Elev: " + this.elev + "m<br/>Station: " + this.stationId + "  </p>")
 
                     tooltip
@@ -77,7 +76,6 @@ function start() {
                 });
 
                 curMarker.addListener("mouseout", function(e) {
-                    // console.log("EVT: ", this);
                     tooltip
                         .transition()
                         .duration(500)
@@ -90,38 +88,94 @@ function start() {
                     if (this.selected) {
                         this.selected = false;
                         selectedIDs.splice(selectedIDs.indexOf(this.stationId), 1);
-                        debug();
+                        displaySelectedData();
                         this.setIcon(blueSymbol);
                         this.setZIndex(2000);
 
                     } else {
                         this.selected = true;
-                        console.log("THIS: ", this);
                         selectedIDs.push(this.stationId);
-                        debug();
+                        displaySelectedData();
                         this.setIcon(redSymbol);
                         this.setZIndex(2000);
                     }
                 })
-
-
-
             }
-
-
         })
 }
 
-function debug() {
-    let sel = document.querySelector("#debug");
-    console.log("SEL: ", selectedIDs);
+function loadDataSet(stationID) {
+    return fetch("data/stationData/" + stationID + ".dly.json").then(data => data.json());
+}
 
-    sel.innerHTML = "";
 
-    selectedIDs.forEach(i => {
-        console.log("i: ", i, "sel: ", selectedIDs);
-        sel.innerHTML += i + "<br/>"
-    })
+function displaySelectedData() {
+    console.log("SELECTED: ", selectedIDs)
+    data = [];
+    loaded = [];
+
+    for (let curIdx in selectedIDs) {
+        loaded[curIdx] = false;
+        let dat = loadDataSet(selectedIDs[curIdx]);
+        dat.then(e => {
+            loaded[curIdx] = true;
+            data[curIdx] = e;
+        })
+    }
+
+    setTimeout(checkLoaded, 100);
+
+}
+
+function checkLoaded() {
+    let allLoaded = true;
+
+    for (let i in loaded) {
+        if (!loaded[i])
+            allLoaded = false;
+    }
+    if (!allLoaded) {
+        console.log("NOT YET");
+        setTimeout(checkLoaded, 100);
+    } else {
+        printSummaries();
+    }
+}
+
+
+function printSummaries() {
+
+    d3.select("#info").html("");
+
+
+    data.forEach((cur, idx) => {
+        let totalMax = 0;
+        let totalMin = 0;
+        let numMax = 0;
+        let numMin = 0;
+
+        for (const [year, yearData] of Object.entries(cur)) {
+
+            for (const [month, monthData] of Object.entries(yearData)) {
+                if ("TMAX" in monthData) {
+                    totalMax += +monthData["TMAX"];
+                    numMax++;
+                }
+                if ("TMIN" in monthData) {
+                    totalMin += +monthData["TMIN"];
+                    numMin++;
+                }
+            }
+        }
+
+        let info = d3.select("#info")
+            .append("tr")
+            .classed("info", true);
+
+        info.html(`<td>${stationData[ selectedIDs[idx]].name}</td> <td>${(totalMax/numMax/10).toFixed(2)}</td> <td>${(totalMin/numMin/10).toFixed(2)}</td>  `)
+
+
+    });
 
 
 }

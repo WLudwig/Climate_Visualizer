@@ -15,13 +15,23 @@ div.tooltip {
     /* position: absolute; */
     text-align: center;
     width: 180;
-    height: 90px;
+    height: 110px;
     padding: 8px;
-    font-size: 12px;
+    font-size: 15px;
     background: lightsteelblue;
     border: 0px;
     border-radius: 8px;
     pointer-events: none;
     vertical-align: center;
     float: right;
+}
+
+table,
+th,
+td {
+    padding: 5px;
+    margin: 5px;
+    border: 1px solid black;
+    border-collapse: collapse;
+    text-align: center;
 }
