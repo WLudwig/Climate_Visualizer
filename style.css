@@ -26,6 +26,18 @@ div.tooltip {
     float: right;
 }
 
+.tooltipHover {
+    position: absolute;
+    padding: 8px;
+    font-size: 15px;
+    text-align: center;
+    background: lightsteelblue;
+    border: 0px;
+    border-radius: 8px;
+    pointer-events: none;
+    vertical-align: center;
+}
+
 table,
 th,
 td {
@@ -34,4 +46,9 @@ td {
     border: 1px solid black;
     border-collapse: collapse;
     text-align: center;
+}
+
+.hovered {
+    stroke: red;
+    stroke-width: 5;
 }
