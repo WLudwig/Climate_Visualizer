@@ -192,10 +192,35 @@ function drawChart() {
     .domain([Date.now() - 365.24 * 24 * 60 * 60 * 1000 * numYears, Date.now()]);
   // .nice();
 
+  //Get y range
+
+  let absMax = -10000;
+  let absMin = 10000;
+
+  data.forEach((cur, idx) => {
+    for (const [year, yearData] of Object.entries(cur)) {
+      let hasSummer = false;
+      let yrMax = -10000;
+      for (const [month, monthData] of Object.entries(yearData)) {
+        if (monthData.hasOwnProperty("TMAX")) {
+          if (month > 5 && month < 9) hasSummer = true;
+
+          if (monthData["TMAX"] > yrMax) yrMax = monthData["TMAX"];
+        }
+      }
+      if (yrMax > absMax && Math.abs(yrMax) != 10000 && hasSummer)
+        absMax = yrMax;
+      if (yrMax < absMin && Math.abs(yrMax) != 10000 && hasSummer)
+        absMin = yrMax;
+    }
+  });
+
+  console.log(absMax, absMin);
+
   let yScale = d3
     .scaleLinear()
     .range([0, height - (paddingTop + paddingBottom)])
-    .domain([50, 10]);
+    .domain([absMax, absMin]); //[50, 10]);
 
   let xAxis = d3.axisBottom(xScale);
 
@@ -226,11 +251,21 @@ function drawChart() {
 
     for (const [year, yearData] of Object.entries(cur)) {
       let maxTemp = -10000;
+      hasSummer = false;
 
       for (const [month, monthData] of Object.entries(yearData)) {
-        if (monthData["TMAX"] > maxTemp) maxTemp = monthData["TMAX"];
+        if (monthData.hasOwnProperty("TMAX")) {
+          if (month > 5 && month < 9) hasSummer = true;
+
+          if (monthData["TMAX"] > maxTemp) maxTemp = monthData["TMAX"];
+        }
       }
-      if (maxTemp >= 200) {
+      //   if (maxTemp >= 200) {
+      if (hasSummer && maxTemp != -10000) {
+        if (maxTemp < absMin) {
+          console.log("MIN");
+        }
+
         let d = new Date(year, 1);
         workingData.push({ date: d, tmax: maxTemp });
       }
@@ -251,7 +286,11 @@ function drawChart() {
             return xScale(d.date);
           })
           .y(function (d) {
-            return yScale(d.tmax / 10.0);
+            if (d.tmax < absMin) {
+              console.log(d.tmax);
+            }
+            val = yScale(d.tmax);
+            return val;
           })
       )
       .on("mouseover", function (evt) {
