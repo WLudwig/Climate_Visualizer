@@ -203,7 +203,7 @@ function drawChart() {
       let yrMax = -10000;
       for (const [month, monthData] of Object.entries(yearData)) {
         if (monthData.hasOwnProperty("TMAX")) {
-          if (month > 5 && month < 9) hasSummer = true;
+          if (month == 7) hasSummer = true;
 
           if (monthData["TMAX"] > yrMax) yrMax = monthData["TMAX"];
         }
@@ -220,7 +220,7 @@ function drawChart() {
   let yScale = d3
     .scaleLinear()
     .range([0, height - (paddingTop + paddingBottom)])
-    .domain([absMax, absMin]); //[50, 10]);
+    .domain([50, 0]); //[absMax / 10, absMin / 10]); //[50, 10]);
 
   let xAxis = d3.axisBottom(xScale);
 
@@ -255,7 +255,7 @@ function drawChart() {
 
       for (const [month, monthData] of Object.entries(yearData)) {
         if (monthData.hasOwnProperty("TMAX")) {
-          if (month > 5 && month < 9) hasSummer = true;
+          if (month == 7) hasSummer = true;
 
           if (monthData["TMAX"] > maxTemp) maxTemp = monthData["TMAX"];
         }
@@ -271,6 +271,7 @@ function drawChart() {
       }
     }
 
+    //create line
     svg
       .append("path")
       .datum(workingData)
@@ -283,33 +284,112 @@ function drawChart() {
         d3
           .line()
           .x(function (d) {
-            return xScale(d.date);
+            return xScale(d.date) + paddingLeft;
           })
           .y(function (d) {
             if (d.tmax < absMin) {
               console.log(d.tmax);
             }
-            val = yScale(d.tmax);
+            val = yScale(d.tmax / 10) + paddingTop;
             return val;
           })
-      )
-      .on("mouseover", function (evt) {
-        chartPopup.html("<p>" + this.getAttribute("stationName") + "</p>");
+      );
+    // .on("mouseover", function (evt) {
+    //   chartPopup.html("<p>" + this.getAttribute("stationName") + "</p>");
 
-        chartPopup
-          .style("left", d3.event.pageX - 10 + "px")
-          .style("top", d3.event.pageY - 40 + "px");
+    //   chartPopup
+    //     .style("left", d3.event.pageX - 10 + "px")
+    //     .style("top", d3.event.pageY - 40 + "px");
 
-        chartPopup.transition().duration(200).style("opacity", 0.9);
+    //   chartPopup.transition().duration(200).style("opacity", 0.9);
 
-        d3.select(this).classed("hovered", true).moveToFront();
-      })
-      .on("mouseout", function (evt) {
-        chartPopup.transition().duration(200).style("opacity", 0);
+    //   d3.select(this).classed("hovered", true).moveToFront();
+    // })
+    // .on("mouseout", function (evt) {
+    //   chartPopup.transition().duration(200).style("opacity", 0);
 
-        d3.select(this).classed("hovered", false);
-      });
+    //   d3.select(this).classed("hovered", false);
+    // });
   });
+
+  //https://www.d3-graph-gallery.com/graph/line_cursor.html
+
+  //append a circle for testing TODO REMOVE
+  let circle = svg
+    .append("circle")
+    .attr("r", 5)
+    .attr("cx", 50)
+    .attr("cy", 60)
+    .attr("fill", "red");
+
+  //append vertical line
+  let line = svg
+    .append("line")
+    .style("stroke", "lightgrey")
+    .attr("x1", 0)
+    .attr("x2", 0)
+    .attr("y1", paddingTop)
+    .attr("y2", height - paddingBottom)
+    .attr("stroke-width", 2);
+
+  //create rect on top of svg area: this rectangle recovers mouse position
+  svg
+    .append("rect")
+    .style("fill", "none")
+    .style("pointer-events", "all")
+    .attr("width", width)
+    .attr("height", height)
+    .on("mouseover", function () {
+      let xPix = d3.mouse(this)[0];
+      line.attr("x1", xPix);
+      line.attr("x2", xPix);
+
+      //draw line here TODO
+    })
+    .on("mouseout", function () {
+      //remove line TODO
+    })
+    .on("mousemove", function () {
+      //draw line
+      let xPix = d3.mouse(this)[0];
+      line.attr("x1", xPix);
+      line.attr("x2", xPix);
+
+      //recover coordinate
+      let xDate = xScale.invert(d3.mouse(this)[0] - paddingLeft);
+
+      let yr = data[0][xDate.getFullYear()];
+      if (yr) {
+        let hasSummer = false;
+        let maxTemp = -1000;
+
+        for (const [month, monthData] of Object.entries(yr)) {
+          if (monthData.hasOwnProperty("TMAX")) {
+            if (month == 7) hasSummer = true;
+
+            if (monthData["TMAX"] > maxTemp) maxTemp = monthData["TMAX"];
+          }
+        }
+
+        if (hasSummer) {
+          circle
+            .attr("cx", xScale(xDate) + paddingLeft)
+            .attr("cy", yScale(maxTemp / 10) + paddingTop);
+          console.log(yr, maxTemp, hasSummer);
+        }
+
+        // let mnth = yr[xDate.getMonth() + 1];
+        // if (mnth) {
+        //   circle
+        //     .attr("cx", xScale(xDate) + paddingLeft)
+        //     .attr("cy", yScale(mnth["TMAX"]) + paddingTop);
+        //   console.log(yr, mnth, yScale(mnth["TMAX"] / 10) + paddingTop);
+        // }
+      }
+
+      console.log("THINK: ", xDate.getFullYear(), xDate.getMonth() + 1);
+      //draw things...
+    });
 
   // data.forEach((cur, idx) => {
 
