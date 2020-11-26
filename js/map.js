@@ -220,7 +220,7 @@ function drawChart() {
   let yScale = d3
     .scaleLinear()
     .range([0, height - (paddingTop + paddingBottom)])
-    .domain([50, 0]); //[absMax / 10, absMin / 10]); //[50, 10]);
+    .domain([absMax / 10 + 5, absMin / 10 - 5]); //[50, 10]);
 
   let xAxis = d3.axisBottom(xScale);
 
@@ -277,12 +277,13 @@ function drawChart() {
       .datum(workingData)
       .attr("fill", "none")
       .attr("stroke", "blue")
-      .attr("stroke-width", 3)
+      .attr("stroke-width", 1)
       .attr("stationName", stationData[selectedIDs[idx]].name)
       .attr(
         "d",
         d3
           .line()
+          .curve(d3.curveCardinal)
           .x(function (d) {
             return xScale(d.date) + paddingLeft;
           })
@@ -317,7 +318,7 @@ function drawChart() {
   //append a circle for testing TODO REMOVE
   let circle = svg
     .append("circle")
-    .attr("r", 5)
+    .attr("r", 4)
     .attr("cx", 50)
     .attr("cy", 60)
     .attr("fill", "red");
@@ -375,7 +376,7 @@ function drawChart() {
           circle
             .attr("cx", xScale(xDate) + paddingLeft)
             .attr("cy", yScale(maxTemp / 10) + paddingTop);
-          console.log(yr, maxTemp, hasSummer);
+          // console.log(yr, maxTemp, hasSummer);
         }
 
         // let mnth = yr[xDate.getMonth() + 1];
@@ -387,7 +388,7 @@ function drawChart() {
         // }
       }
 
-      console.log("THINK: ", xDate.getFullYear(), xDate.getMonth() + 1);
+      // console.log("THINK: ", xDate.getFullYear(), xDate.getMonth() + 1);
       //draw things...
     });
 
