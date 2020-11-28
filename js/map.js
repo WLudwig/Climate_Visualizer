@@ -3,6 +3,9 @@ loaded = [];
 data = [];
 stationData = [];
 markers = [];
+colorArr = ["#5E4FA2", "#66C2A5", "#ABDDA4", "#E6F598",
+    "#FFFFBF", "#FEE08B", "#FDAE61", "#F46D43", "#D53E4F", "#9E0142"
+];
 
 //http://bl.ocks.org/eesur/4e0a69d57d3bfc8a82c2
 d3.selection.prototype.moveToFront = function() {
@@ -280,12 +283,18 @@ function drawChart() {
             }
         }
 
+        let colorScale = d3.scaleQuantize()
+            .domain([0, data.length])
+            .range(colorArr);
+
         //create line
         svg
             .append("path")
             .datum(workingData)
             .attr("fill", "none")
-            .attr("stroke", "blue")
+            .attr("stroke", () => {
+                return colorScale(idx);
+            })
             .attr("stroke-width", 1)
             .attr("stationName", stationData[selectedIDs[idx]].name)
             .attr(
@@ -419,7 +428,7 @@ function drawChart() {
                 }
             }
 
-            drawBarChart(chartData, "Maximum Temperature");
+            drawBarChart(chartData, "Maximum Temperature (Celsius)");
 
 
 
@@ -449,6 +458,7 @@ function drawBarChart(values, category) {
     svg.selectAll("*").remove();
 
 
+
     let width = 500;
     let height = 500;
     svg.attr("width", width).attr("height", height);
@@ -459,8 +469,8 @@ function drawBarChart(values, category) {
     let paddingBottom = 25;
 
     //get max and min
-    let min = 1000;
-    let max = -1000;
+    let min = 100;
+    let max = 0;
     values.forEach((cur, idx) => {
         let curValue = cur["value"];
         if (curValue > max)
@@ -469,9 +479,15 @@ function drawBarChart(values, category) {
             min = curValue;
     })
 
+
+
     let yScale = d3.scaleLinear()
         .range([0, height - (paddingTop + paddingBottom)])
         .domain([max + 1, min - 1]); //[50, 10]);
+
+    let colors = d3.scaleQuantize()
+        .domain([0, values.length])
+        .range(colorArr);
 
 
     svg
@@ -479,9 +495,19 @@ function drawBarChart(values, category) {
         .attr("transform", "translate(" + paddingLeft + "," + paddingTop + ")")
         .call(d3.axisLeft(yScale));
 
+
+    svg.append("text")
+        .attr("x", width / 2)
+        .attr("y", paddingTop - 5)
+        .attr("style", "text-anchor:middle;")
+        .text(category);
+
+
+
+
     let barWidth = (width - paddingLeft - paddingRight) / values.length;
 
-    let bars = svg.selectAll("rect")
+    svg.selectAll("rect")
         .data(values)
         .join("rect")
         .attr("width", barWidth)
@@ -494,7 +520,10 @@ function drawBarChart(values, category) {
         .attr("x", function(d, i) {
             return (paddingLeft + (i * barWidth))
         })
-        .attr("fill", "red");
+        .attr("fill", function(d, i) {
+            return colors(i);
+        });
+
 }
 
 function printSummaries() {
