@@ -259,12 +259,7 @@ function drawChart() {
         .attr("transform", "translate(" + paddingLeft + "," + paddingTop + ")")
         .call(yAxis);
 
-    let chartPopup = d3
-        .select("body")
-        .append("div")
-        .classed("tooltipHover", true)
-        .attr("id", "chartToolTip")
-        .style("opacity", 0);
+
 
     data.forEach((cur, idx) => {
         let workingData = [];
@@ -479,11 +474,18 @@ function drawBarChart(values, category) {
             min = curValue;
     })
 
+    // console.log("MM: ", min, max);
 
 
     let yScale = d3.scaleLinear()
-        .range([0, height - (paddingTop + paddingBottom)])
-        .domain([max + 1, min - 1]); //[50, 10]);
+        .range([height - (paddingTop + paddingBottom), 0])
+        .domain([max + 1, 0]); //[50, 10]);
+
+    let yScaleAxis = d3.scaleLinear()
+        .range([height - (paddingTop + paddingBottom), 0])
+        .domain([0, max + 1]); //[50, 10]);
+
+    console.log("max:", max, "scaled:", yScale(max))
 
     let colors = d3.scaleQuantize()
         .domain([0, values.length])
@@ -493,7 +495,7 @@ function drawBarChart(values, category) {
     svg
         .append("g")
         .attr("transform", "translate(" + paddingLeft + "," + paddingTop + ")")
-        .call(d3.axisLeft(yScale));
+        .call(d3.axisLeft(yScaleAxis));
 
 
     svg.append("text")
