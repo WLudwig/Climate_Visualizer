@@ -7,6 +7,9 @@ colorArr = ["#5E4FA2", "#66C2A5", "#ABDDA4", "#E6F598",
     "#FFFFBF", "#FEE08B", "#FDAE61", "#F46D43", "#D53E4F", "#9E0142"
 ];
 
+category = "TMAX"; //TMAX, 0100, PREC, TMIN
+
+
 //http://bl.ocks.org/eesur/4e0a69d57d3bfc8a82c2
 d3.selection.prototype.moveToFront = function() {
     return this.each(function() {
@@ -22,6 +25,12 @@ d3.selection.prototype.moveToBack = function() {
     });
 };
 
+d3.select("#catPicker").on("change", function() {
+    category = this.value;
+    drawChart();
+});
+
+
 function start() {
     let blueSymbol = {
         url: "blueMarker.png",
@@ -31,6 +40,19 @@ function start() {
         url: "redMarker.png",
         scaledSize: new google.maps.Size(20, 20),
     };
+
+
+    d3.select("#clearButton").on("click", function() {
+        markers.forEach(cur => {
+            cur.selected = false;
+            // selectedIDs.splice(selectedIDs.indexOf(cur.stationId), 1);
+            cur.setIcon(blueSymbol);
+            cur.setZIndex(2000);
+        })
+        displaySelectedData();
+        selectedIDs = [];
+        drawBarChart([], "");
+    });
 
     fetch("data/stationDetails.json")
         .then((response) => response.json())
@@ -129,6 +151,7 @@ function start() {
             //https://developers.google.com/maps/documentation/javascript/marker-clustering#maps_marker_clustering-javascript
             new MarkerClusterer(map, markers, {
                 imagePath: "assets/cluster/m",
+                gridSize: 50
             });
         });
 }
@@ -156,8 +179,55 @@ function getTMAXYear(yr) {
     return [maxTemp, hasSummer];
 }
 
+function getNumOver100Year(yr) {
+    let numDays = 0;
+
+    for (const [month, monthData] of Object.entries(yr)) {
+
+        // console.log("MNTH: ", monthData);
+
+        if (monthData.hasOwnProperty("O100")) {
+            numDays += +monthData["O100"];
+        }
+    }
+
+    return [numDays, true];
+
+}
+
+function getTMINYear(yr) {
+    let minTemp = 1000;
+    let hasSummer = false;
+
+    for (const [month, monthData] of Object.entries(yr)) {
+        if (monthData.hasOwnProperty("TMIN")) {
+            if (month == 12) hasSummer = true;
+
+            if (monthData["TMIN"] < minTemp) minTemp = monthData["TMIN"];
+        }
+    }
+
+
+    return [minTemp, hasSummer];
+}
+
+function getPRECYear(yr) {
+    let numDays = 0;
+
+    for (const [month, monthData] of Object.entries(yr)) {
+
+        // console.log("MNTH: ", monthData);
+
+        if (monthData.hasOwnProperty("PRCP")) {
+            numDays += +monthData["PRCP"];
+        }
+    }
+
+    return [numDays, true];
+}
+
 function displaySelectedData() {
-    console.log("SELECTED: ", selectedIDs);
+    // console.log("SELECTED: ", selectedIDs);
     data = [];
     loaded = [];
 
@@ -180,7 +250,7 @@ function checkLoaded() {
         if (!loaded[i]) allLoaded = false;
     }
     if (!allLoaded) {
-        console.log("NOT YET");
+        // console.log("NOT YET");
         setTimeout(checkLoaded, 100);
     } else {
         //DATA LOADED HERE
@@ -200,7 +270,7 @@ function drawChart() {
     let paddingRight = 25;
     let paddingLeft = 80;
     let paddingTop = 25;
-    let paddingBottom = 25;
+    let paddingBottom = 75;
 
     svg.attr("width", width).attr("height", height);
 
@@ -211,6 +281,29 @@ function drawChart() {
         .range([0, width - (paddingLeft + paddingRight)])
         .domain([Date.now() - 365.24 * 24 * 60 * 60 * 1000 * numYears, Date.now()]);
     // .nice();
+
+    let cat = "";
+
+    if (category === "TMAX")
+        cat = "Degrees C";
+    else if (category === "TMIN")
+        cat = "Degrees C";
+    else if (category === "O100")
+        cat = "Total Days over 100 F";
+    else if (category === "PRCP")
+        cat = "Precipitation (mm)"
+
+    svg.append("text")
+        .attr("transform", "rotate(-90) translate(-350,50)")
+        // .attr("transform", "translate(10,50)")
+        .style("text-anchor", "start")
+        .text(cat);
+
+    svg.append("text")
+        .attr("transform", "translate(" + (width / 2 + 20) + "," + (height - paddingTop - 18) + ")")
+        .style("text-anchor", "middle")
+        .text("Year");
+
 
     //Get y range
 
@@ -229,7 +322,21 @@ function drawChart() {
             //     }
             // }
 
-            let [yrMax, hasSummer] = getTMAXYear(yearData);
+            let yrMax, hasSummer;
+
+            if (category === "TMAX") {
+                [yrMax, hasSummer] = getTMAXYear(yearData);
+            } else if (category === "O100") {
+                [yrMax, hasSummer] = getNumOver100Year(yearData);
+            } else if (category === "PRCP") {
+                [yrMax, hasSummer] = getPRECYear(yearData);
+            } else if (category === "TMIN") {
+
+                [yrMax, hasSummer] = getTMINYear(yearData);
+
+            }
+
+
             if (yrMax > absMax && Math.abs(yrMax) != 10000 && hasSummer)
                 absMax = yrMax;
             if (yrMax < absMin && Math.abs(yrMax) != 10000 && hasSummer)
@@ -237,11 +344,25 @@ function drawChart() {
         }
     });
 
+    // console.log("MIN:", absMin, "MAX:", absMax);
+
+
+    if (category === "TMAX") {
+        absMax /= 10;
+        absMin /= 10;
+
+    } else if (category === "TMIN") {
+
+        absMax /= 10;
+        absMin /= 10;
+
+    }
+
 
     let yScale = d3
         .scaleLinear()
         .range([0, height - (paddingTop + paddingBottom)])
-        .domain([absMax / 10 + 5, absMin / 10 - 5]); //[50, 10]);
+        .domain([absMax + 5, absMin - 5]); //[50, 10]);
 
     let xAxis = d3.axisBottom(xScale);
 
@@ -261,27 +382,44 @@ function drawChart() {
         .call(yAxis);
 
 
+    //draw lines
+
 
     data.forEach((cur, idx) => {
         let workingData = [];
 
         for (const [year, yearData] of Object.entries(cur)) {
 
-            let [maxTemp, hasSummer] = getTMAXYear(yearData);
+            let val, hasSummer;
+            // console.log(yearData);
 
-            if (hasSummer && maxTemp != -10000) {
-                if (maxTemp < absMin) {
-                    console.log("MIN");
-                }
+            if (category === "TMAX") {
+                [val, hasSummer] = getTMAXYear(yearData);
+                val /= 10;
+            } else if (category === "O100") {
+                [val, hasSummer] = getNumOver100Year(yearData);
+            } else if (category === "PRCP") {
+                [val, hasSummer] = getPRECYear(yearData);
+            } else if (category === "TMIN") {
+                [val, hasSummer] = getTMINYear(yearData);
+                val /= 10;
+
+            }
+
+            if (hasSummer && val != -10000) {
 
                 let d = new Date(year, 1);
-                workingData.push({ date: d, tmax: maxTemp });
+                workingData.push({ date: d, val: val });
             }
         }
 
         let colorScale = d3.scaleQuantize()
             .domain([0, data.length])
             .range(colorArr);
+
+
+        if (selectedIDs.length === 0)
+            return;
 
         //create line
         svg
@@ -302,10 +440,8 @@ function drawChart() {
                     return xScale(d.date) + paddingLeft;
                 })
                 .y(function(d) {
-                    if (d.tmax < absMin) {
-                        console.log(d.tmax);
-                    }
-                    val = yScale(d.tmax / 10) + paddingTop;
+
+                    val = yScale(d.val) + paddingTop;
                     return val;
                 })
             );
@@ -333,12 +469,19 @@ function drawChart() {
         .attr("width", width)
         .attr("height", height)
         .on("mouseover", function() {
+
+            if (selectedIDs.length === 0)
+                return;
             let xPix = d3.mouse(this)[0];
             line.attr("x1", xPix);
             line.attr("x2", xPix);
 
         })
         .on("mousemove", function() {
+
+            if (selectedIDs.length === 0)
+                return;
+
             //draw line
             let xPix = d3.mouse(this)[0];
             line.attr("x1", xPix);
@@ -361,20 +504,34 @@ function drawChart() {
                     let yr = curData[xDate.getFullYear()];
                     if (yr) {
                         let hasSummer = false;
-                        let maxTemp = -1000;
+                        let val = -1000;
 
-                        for (const [month, monthData] of Object.entries(yr)) {
-                            if (monthData.hasOwnProperty("TMAX")) {
-                                if (month == 7) hasSummer = true;
+                        if (category === "TMAX") {
+                            [val, hasSummer] = getTMAXYear(yr);
+                            val /= 10;
+                        } else if (category === "O100") {
+                            [val, hasSummer] = getNumOver100Year(yr);
+                        } else if (category === "PRCP") {
+                            [val, hasSummer] = getPRECYear(yr);
+                        } else if (category === "TMIN") {
+                            [val, hasSummer] = getTMINYear(yr);
+                            val /= 10;
 
-                                if (monthData["TMAX"] > maxTemp) maxTemp = monthData["TMAX"];
-                            }
                         }
+
+
+                        // for (const [month, monthData] of Object.entries(yr)) {
+                        //     if (monthData.hasOwnProperty("TMAX")) {
+                        //         if (month == 7) hasSummer = true;
+
+                        //         if (monthData["TMAX"] > maxTemp) maxTemp = monthData["TMAX"];
+                        //     }
+                        // }
 
                         if (hasSummer) {
                             curCircle
                                 .attr("cx", xScale(xDate) + paddingLeft)
-                                .attr("cy", yScale(maxTemp / 10) + paddingTop);
+                                .attr("cy", yScale(val) + paddingTop);
                         }
 
                         // let mnth = yr[xDate.getMonth() + 1];
@@ -399,18 +556,33 @@ function drawChart() {
                 let yr = curData[xDate.getFullYear()];
                 if (yr) {
                     let hasSummer = false;
-                    let maxTemp = -1000;
+                    let val = -1000;
 
-                    for (const [month, monthData] of Object.entries(yr)) {
-                        if (monthData.hasOwnProperty("TMAX")) {
-                            if (month == 7) hasSummer = true;
 
-                            if (monthData["TMAX"] > maxTemp) maxTemp = monthData["TMAX"];
-                        }
+                    if (category === "TMAX") {
+                        [val, hasSummer] = getTMAXYear(yr);
+                        val /= 10;
+                    } else if (category === "O100") {
+                        [val, hasSummer] = getNumOver100Year(yr);
+                    } else if (category === "PRCP") {
+                        [val, hasSummer] = getPRECYear(yr);
+                        // val /= 10;
+                    } else if (category === "TMIN") {
+                        [val, hasSummer] = getTMINYear(yr);
+                        val /= 10;
+
                     }
 
+                    // for (const [month, monthData] of Object.entries(yr)) {
+                    //     if (monthData.hasOwnProperty("TMAX")) {
+                    //         if (month == 7) hasSummer = true;
+
+                    //         if (monthData["TMAX"] > maxTemp) maxTemp = monthData["TMAX"];
+                    //     }
+                    // }
+
                     if (hasSummer) {
-                        chartData.push({ "value": maxTemp / 10, "id": selectedIDs[i] })
+                        chartData.push({ "value": val, "id": selectedIDs[i] })
                     }
 
 
@@ -449,7 +621,7 @@ function drawChart() {
 }
 
 
-function drawBarChart(values, category) {
+function drawBarChart(values, cat) {
     let svg = d3.select("#barChartSVG");
     svg.selectAll("*").remove();
 
@@ -465,7 +637,7 @@ function drawBarChart(values, category) {
     let paddingBottom = 25;
 
     //get max and min
-    let min = 100;
+    let min = 0;
     let max = 0;
     values.forEach((cur, idx) => {
         let curValue = cur["value"];
@@ -475,18 +647,20 @@ function drawBarChart(values, category) {
             min = curValue;
     })
 
-    // console.log("MM: ", min, max);
 
+
+    if (max < 0) {
+        min = max;
+        max = 0;
+    }
 
     let yScale = d3.scaleLinear()
         .range([height - (paddingTop + paddingBottom), 0])
-        .domain([max + 1, 0]); //[50, 10]);
+        .domain([max + 1, min - 1]); //[50, 10]);
 
     let yScaleAxis = d3.scaleLinear()
         .range([height - (paddingTop + paddingBottom), 0])
-        .domain([0, max + 1]); //[50, 10]);
-
-    console.log("max:", max, "scaled:", yScale(max))
+        .domain([min - 1, max + 1]); //[50, 10]);
 
     let colors = d3.scaleQuantize()
         .domain([0, values.length])
@@ -499,11 +673,20 @@ function drawBarChart(values, category) {
         .call(d3.axisLeft(yScaleAxis));
 
 
+    if (category === "TMAX")
+        cat = "Maximum Temperature (Celsius)";
+    else if (category === "TMIN")
+        cat = "Minimum Temperature (Celsius)";
+    else if (category === "O100")
+        cat = "Number of days over 100 F";
+    else if (category === "PRCP")
+        cat = "Total Precipitation (mm)"
+
     svg.append("text")
         .attr("x", width / 2)
         .attr("y", paddingTop - 5)
         .attr("style", "text-anchor:middle;")
-        .text(category);
+        .text(cat);
 
 
 
@@ -531,6 +714,10 @@ function drawBarChart(values, category) {
 
 function printSummaries() {
     d3.select("#info").html("");
+
+
+    if (selectedIDs.length === 0)
+        return;
 
     data.forEach((cur, idx) => {
         let totalMax = 0;
