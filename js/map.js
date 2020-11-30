@@ -219,15 +219,17 @@ function drawChart() {
 
     data.forEach((cur, idx) => {
         for (const [year, yearData] of Object.entries(cur)) {
-            let hasSummer = false;
-            let yrMax = -10000;
-            for (const [month, monthData] of Object.entries(yearData)) {
-                if (monthData.hasOwnProperty("TMAX")) {
-                    if (month == 7) hasSummer = true;
+            // let hasSummer = false;
+            // let yrMax = -10000;
+            // for (const [month, monthData] of Object.entries(yearData)) {
+            //     if (monthData.hasOwnProperty("TMAX")) {
+            //         if (month == 7) hasSummer = true;
 
-                    if (monthData["TMAX"] > yrMax) yrMax = monthData["TMAX"];
-                }
-            }
+            //         if (monthData["TMAX"] > yrMax) yrMax = monthData["TMAX"];
+            //     }
+            // }
+
+            let [yrMax, hasSummer] = getTMAXYear(yearData);
             if (yrMax > absMax && Math.abs(yrMax) != 10000 && hasSummer)
                 absMax = yrMax;
             if (yrMax < absMin && Math.abs(yrMax) != 10000 && hasSummer)
@@ -235,7 +237,6 @@ function drawChart() {
         }
     });
 
-    console.log(absMax, absMin);
 
     let yScale = d3
         .scaleLinear()
