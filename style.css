@@ -52,3 +52,39 @@ td {
     stroke: red;
     stroke-width: 5;
 }
+
+#views,
+#header-wrap {
+    padding: 20px;
+    /* text-align: center; */
+}
+
+#mapDiv {
+    margin: auto;
+    width: 70%;
+    /* height: 600px; */
+}
+
+#controls {
+    text-align: center;
+    margin: auto;
+    width: 100%;
+}
+
+table {
+    text-align: center;
+    margin: auto;
+}
+
+table tr {
+    text-align: center;
+    margin: auto;
+}
+
+h3 {
+    text-align: center;
+}
+
+footer {
+    padding: 10px;
+}

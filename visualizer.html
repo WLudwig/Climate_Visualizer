@@ -32,7 +32,6 @@
     </div>
     <div id="views">
         <div id="mapDiv">
-
         </div>
         <div id="controls">
             <select name="category" id="catPicker">
@@ -43,20 +42,36 @@
             </select>
             <button id="clearButton">Clear Selected</button>
         </div>
+
         <table>
             <thead>
                 <tr>
                     <th>Station Name</th>
                     <th>Average Max Temp (C)</th>
                     <th>Average Min Temp (C)</th>
+                    <th>Average Days over 100 F</th>
+                    <th>Average Annual Precipitation (mm)</th>
                 </tr>
             </thead>
             <tbody id="info">
-                <svg id="chartSVG"></svg>
-                <svg id="barChartSVG"></svg>
+                <tr>
+                    <svg id="chartSVG"></svg>
+                    <svg id="barChartSVG"></svg>
+                </tr>
+                <tr>
+                    <div>
+                        <svg id="legendSVG"></svg>
+                    </div>
+                    <h3>Data Summary</h3>
+                </tr>
             </tbody>
         </table>
     </div>
+    <hr>
+    <footer>
+        <p>&copy; Jacob Blomquist | William Ludwig 2020</p>
+        <p>Data Set from NOAA HCN <a href="ftp://ftp.ncdc.noaa.gov/pub/data/ghcn/" target="_blank">LINK</a></p>
+    </footer>
 </body>
 
 <script src="js/map.js"></script>

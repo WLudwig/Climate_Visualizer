@@ -3,8 +3,8 @@ loaded = [];
 data = [];
 stationData = [];
 markers = [];
-colorArr = ["#5E4FA2", "#66C2A5", "#ABDDA4", "#E6F598",
-    "#FFFFBF", "#FEE08B", "#FDAE61", "#F46D43", "#D53E4F", "#9E0142"
+colorArr = ["#FF0000", "#FFA500", "#FF00D8", "#0043FF",
+    "#8700FF"
 ];
 
 category = "TMAX"; //TMAX, 0100, PREC, TMIN
@@ -51,6 +51,7 @@ function start() {
         })
         displaySelectedData();
         selectedIDs = [];
+        drawLegend();
         drawBarChart([], "");
     });
 
@@ -67,7 +68,7 @@ function start() {
                 mapTypeControl: true,
                 mapTypeControlOptions: {
                     style: google.maps.MapTypeControlStyle.DROPDOWN_MENU,
-                    mapTypeIds: ["roadmap", "terrain"],
+                    mapTypeIds: ["roadmap", "terrain", "satellite"],
                 },
                 disableDefaultUI: true,
                 zoomControl: true,
@@ -136,6 +137,8 @@ function start() {
                         this.setIcon(blueSymbol);
                         this.setZIndex(2000);
                     } else {
+                        if (selectedIDs.length === 5)
+                            return;
                         this.selected = true;
                         selectedIDs.push(this.stationId);
                         displaySelectedData();
@@ -151,7 +154,7 @@ function start() {
             //https://developers.google.com/maps/documentation/javascript/marker-clustering#maps_marker_clustering-javascript
             new MarkerClusterer(map, markers, {
                 imagePath: "assets/cluster/m",
-                gridSize: 50
+                // gridSize: 50
             });
         });
 }
@@ -255,12 +258,13 @@ function checkLoaded() {
     } else {
         //DATA LOADED HERE
         drawChart();
+        drawLegend();
         printSummaries();
     }
 }
 
 function drawChart() {
-    let svg = d3.select("#chartSVG").attr("style", "border: 1px solid black;");
+    let svg = d3.select("#chartSVG"); //.attr("style", "border: 1px solid black;");
 
     svg.selectAll("*").remove();
 
@@ -634,7 +638,7 @@ function drawBarChart(values, cat) {
     let paddingRight = 25;
     let paddingLeft = 80;
     let paddingTop = 25;
-    let paddingBottom = 25;
+    let paddingBottom = 80;
 
     //get max and min
     let min = 0;
@@ -722,30 +726,113 @@ function printSummaries() {
     data.forEach((cur, idx) => {
         let totalMax = 0;
         let totalMin = 0;
+        let totalPrec = 0;
+        let totalO100 = 0;
+        let numO100 = 0;
+        let numPrec = 0;
+
         let numMax = 0;
         let numMin = 0;
 
         for (const [year, yearData] of Object.entries(cur)) {
+            let yrMax = -1000;
+            let yrMin = 1000;
+            let has100data = false;
+            let hasPrcpData = false;
+
             for (const [month, monthData] of Object.entries(yearData)) {
                 if ("TMAX" in monthData) {
-                    totalMax += +monthData["TMAX"];
-                    numMax++;
+                    if (+monthData["TMAX"] > yrMax)
+                        yrMax = +monthData["TMAX"];
                 }
                 if ("TMIN" in monthData) {
-                    totalMin += +monthData["TMIN"];
-                    numMin++;
+                    if (+monthData["TMIN"] < yrMin)
+                        yrMin = +monthData["TMIN"];
                 }
+                if ("O100" in monthData) {
+                    totalO100 += +monthData["O100"];
+
+                    has100data = true;
+                }
+
+                if ("PRCP" in monthData) {
+                    totalPrec += +monthData["PRCP"];
+
+                    hasPrcpData = true;
+                }
+
             }
+
+            if (has100data)
+                numO100++;
+
+            if (hasPrcpData)
+                numPrec++;
+
+            totalMax += yrMax;
+            numMax++;
+            totalMin += yrMin;
+            numMin++;
         }
 
         let info = d3.select("#info").append("tr").classed("info", true);
 
         info.html(
-            `<td>${stationData[selectedIDs[idx]].name}</td> <td>${(
-        totalMax /
-        numMax /
-        10
-      ).toFixed(2)}</td> <td>${(totalMin / numMin / 10).toFixed(2)}</td>  `
+            `<td>${stationData[selectedIDs[idx]].name}, ${stationData[selectedIDs[idx]].state}</td> 
+              <td>${(totalMax /numMax /10).toFixed(2)}</td>
+              <td>${(totalMin / numMin / 10).toFixed(2)}</td>  
+              <td> ${(totalO100/numO100).toFixed(2)} </td> 
+              <td>${(totalPrec/numPrec).toFixed(2)}</td> `
         );
     });
+}
+
+function drawLegend() {
+
+    let width = 1200;
+    let height = 80;
+
+    let paddingTop = 35;
+    // let paddingBottom = 50;
+    let paddingLeft = 25;
+    // let paddingRight = 50;
+
+    let colorScale = d3.scaleQuantize()
+        .domain([0, data.length])
+        .range(colorArr);
+
+    let svg = d3.select("#legendSVG")
+        .attr("width", width)
+        .attr("height", height);
+
+    svg.selectAll("*").remove();
+
+
+    let padding = 200;
+
+    svg.append("text")
+        .style("text-anchor", "middle")
+        .attr("x", width / 2)
+        .attr("y", 12)
+        .text("Legend:");
+
+    selectedIDs.forEach((cur, index) => {
+        let currentStation = stationData[cur];
+        // console.log("DAT: ", currentStation.name, currentStation.state);
+
+        let group = svg.append("g")
+            .attr("transform", "translate(" + (padding * index + paddingLeft) + "," + paddingTop + ")");
+
+        group.append("circle")
+            .attr("r", 15)
+            .attr("fill", colorScale(index));
+
+        group.append("text")
+            .text(currentStation.name + ", " + currentStation.state)
+            .style("font-size", "13px")
+            .attr("x", 15)
+            .attr("y", 5);
+
+    });
+
 }
