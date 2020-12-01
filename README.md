@@ -1,6 +1,6 @@
 # Climate_Visualizer
 
-Our project is a Climate Visualizer that visualizes data from over a thousand weather stations all over the United States.  OUr data is taken from the Global Historical Climatology Network.  The link for our data is ftp://ftp.ncdc.noaa.gov/pub/data/ghcn/.  This data shows high/low temperatures, precipitation, pressure, wind, and much more going back many years.
+Our project is a Climate Visualizer that visualizes data from over a thousand weather stations all over the United States.  Our data is taken from the Global Historical Climatology Network.  The link for our data is ftp://ftp.ncdc.noaa.gov/pub/data/ghcn/.  This data shows high/low temperatures, precipitation, pressure, wind, and much more going back many years.
 
 We processed this data using Python and processed it in JSON files for the specific individual weather stations.  We had to filter out a lot of information from the data because there were a lot more categories than what we were interested in.
 
