@@ -12,6 +12,7 @@ Github Repository: https://github.com/WLudwig/Climate_Visualizer
 
 Project Website: https://wludwig.github.io/Climate_Visualizer/visualizer.html
 
-Screencast Video: 
+Screencast Video: https://youtu.be/TAqfwVADBio
+
 
 Our visualization allows for you to select the weather stations that you want to see data for.  You can then select the category from a drop down menu.  If you hover your mouse over the line charts the data for the year that you are hovering over will be sent to the barchart and this will compare all of your current selections for the year that you are hovering over.  There is also a table at the bottom which gives more precise numerical data.
